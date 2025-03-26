@@ -16,7 +16,7 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
 
     //bird class
     int birdX = boardWidth/8;
-    int birdY = boardWidth/2;
+    int birdY = boardHeight/2;
     int birdWidth = 34;
     int birdHeight = 24;
 
