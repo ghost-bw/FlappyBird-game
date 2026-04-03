@@ -56,6 +56,8 @@ The core game logic file. Contains all game mechanics, rendering, and user inter
 - `flappybirdbg2.png`: Second background image
 - `toppipe.png`: Top pipe obstacle
 - `bottompipe.png`: Bottom pipe obstacle
+- `jump.wav`: Sound played when Space is pressed
+- `hit.wav`: Sound played when the bird collides with a pipe or falls
 
 ## How to Run
 

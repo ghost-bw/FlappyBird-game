@@ -1,7 +1,11 @@
 import java.awt.*;
 import java.awt.event.*;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Random;
+import javax.sound.sampled.*;
 import javax.swing.*;
 
 public class FlappyBird extends JPanel implements ActionListener, KeyListener {
@@ -14,6 +18,9 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
     Image birdImg;
     Image topPipeImg;
     Image bottomPipeImg;
+    Clip jumpClip;
+    Clip hitClip;
+    String audioStatusMessage = "Audio ready";
 
     //bird class
     int birdX = boardWidth/8;
@@ -80,6 +87,8 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
         birdImg = new ImageIcon(getClass().getResource("./flappybird.png")).getImage();
         topPipeImg = new ImageIcon(getClass().getResource("./toppipe.png")).getImage();
         bottomPipeImg = new ImageIcon(getClass().getResource("./bottompipe.png")).getImage();
+        jumpClip = loadClip("jump");
+        hitClip = loadClip("hit");
 
         //bird
         bird = new Bird(birdImg);
@@ -159,6 +168,9 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
         else {
             g.drawString(String.valueOf((int) score), 10, 35);
         }
+
+        g.setFont(new Font("Arial", Font.PLAIN, 12));
+        g.drawString(audioStatusMessage, 10, boardHeight - 10);
         
 	}
 
@@ -179,12 +191,92 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
             }
 
             if (collision(bird, pipe)) {
-                gameOver = true;
+                triggerGameOver();
             }
         }
 
         if (bird.y > boardHeight) {
+            triggerGameOver();
+        }
+    }
+
+    Clip loadClip(String soundName) {
+        String[] supportedExtensions = {".wav", ".aiff", ".au"};
+
+        for (String extension : supportedExtensions) {
+            Clip clip = loadSupportedClip(soundName + extension);
+            if (clip != null) {
+                return clip;
+            }
+        }
+
+        File mp3File = new File(soundName + ".mp3");
+        if (!mp3File.exists()) {
+            mp3File = new File("flappy-bird-java", soundName + ".mp3");
+        }
+        if (mp3File.exists()) {
+            audioStatusMessage = "MP3 found for " + soundName + ". Convert it to " + soundName + ".wav";
+            System.out.println("Found " + mp3File.getName() + ", but MP3 is not supported by this Swing sound setup. Convert it to WAV and keep the same name.");
+        } else {
+            audioStatusMessage = "Missing " + soundName + ".wav";
+            System.out.println("Sound file not found for " + soundName + ". Add " + soundName + ".wav to the game folder.");
+        }
+
+        return null;
+    }
+
+    Clip loadSupportedClip(String fileName) {
+        URL soundUrl = getClass().getResource("./" + fileName);
+
+        try {
+            if (soundUrl != null) {
+                try (AudioInputStream audioStream = AudioSystem.getAudioInputStream(soundUrl)) {
+                    Clip clip = AudioSystem.getClip();
+                    clip.open(audioStream);
+                    audioStatusMessage = "Audio ready";
+                    return clip;
+                }
+            }
+
+            File soundFile = new File(fileName);
+            if (!soundFile.exists()) {
+                soundFile = new File("flappy-bird-java", fileName);
+            }
+            if (!soundFile.exists()) {
+                return null;
+            }
+
+            try (AudioInputStream audioStream = AudioSystem.getAudioInputStream(soundFile)) {
+                Clip clip = AudioSystem.getClip();
+                clip.open(audioStream);
+                audioStatusMessage = "Audio ready";
+                return clip;
+            }
+        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+            audioStatusMessage = "Could not load " + fileName;
+            System.out.println("Could not load sound: " + fileName);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    void playClip(Clip clip) {
+        if (clip == null) {
+            Toolkit.getDefaultToolkit().beep();
+            return;
+        }
+
+        if (clip.isRunning()) {
+            clip.stop();
+        }
+        clip.setFramePosition(0);
+        clip.start();
+    }
+
+    void triggerGameOver() {
+        if (!gameOver) {
             gameOver = true;
+            playClip(hitClip);
         }
     }
 
@@ -209,9 +301,6 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
     @Override
     public void keyPressed(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_SPACE) {
-            // System.out.println("JUMP!");
-            velocityY = -9;
-
             if (gameOver) {
                 //restart game by resetting conditions
                 bird.y = birdY;
@@ -223,6 +312,9 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
                 placePipeTimer.start();
                 backgroundSwitchTimer.start();
             }
+
+            velocityY = -9;
+            playClip(jumpClip);
         }
     }
 
