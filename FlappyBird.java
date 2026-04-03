@@ -10,6 +10,7 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
 
     //images
     Image backgroundImg;
+    Image backgroundImg1;
     Image birdImg;
     Image topPipeImg;
     Image bottomPipeImg;
@@ -54,16 +55,18 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
     //game logic
     Bird bird;
     int velocityX = -4; //move pipes to the left speed (simulates bird moving right)
-    int velocityY = 0; //move bird up/down speed.
-    int gravity = 1;
+    double velocityY = 0; //move bird up/down speed.
+    double gravity = 0.5;
 
     ArrayList<Pipe> pipes;
     Random random = new Random();
 
     Timer gameLoop;
     Timer placePipeTimer;
+    Timer backgroundSwitchTimer;
     boolean gameOver = false;
     double score = 0;
+    boolean useSecondBackground = false;
 
     FlappyBird() {
         setPreferredSize(new Dimension(boardWidth, boardHeight));
@@ -72,7 +75,8 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
         addKeyListener(this);
 
         //load images
-        backgroundImg = new ImageIcon(getClass().getResource("./flappybirdbg.png")).getImage();
+        backgroundImg = new ImageIcon(getClass().getResource("./flappybirdbg2.png")).getImage();
+        backgroundImg1 = new ImageIcon(getClass().getResource("./flappybirdbg1.png")).getImage();
         birdImg = new ImageIcon(getClass().getResource("./flappybird.png")).getImage();
         topPipeImg = new ImageIcon(getClass().getResource("./toppipe.png")).getImage();
         bottomPipeImg = new ImageIcon(getClass().getResource("./bottompipe.png")).getImage();
@@ -90,6 +94,20 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
             }
         });
         placePipeTimer.start();
+        
+        //background switch timer
+        backgroundSwitchTimer = new Timer(10000, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                useSecondBackground = !useSecondBackground;
+                if (useSecondBackground) {
+                    backgroundImg = backgroundImg1;
+                } else {
+                    backgroundImg = new ImageIcon(getClass().getResource("./flappybirdbg2.png")).getImage();
+                }
+            }
+        });
+        backgroundSwitchTimer.start();
         
 		//game timer
 		gameLoop = new Timer(1000/60, this); //how long it takes to start timer, milliseconds gone between frames 
@@ -184,6 +202,7 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
         if (gameOver) {
             placePipeTimer.stop();
             gameLoop.stop();
+            backgroundSwitchTimer.stop();
         }
     }  
 
@@ -202,6 +221,7 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
                 score = 0;
                 gameLoop.start();
                 placePipeTimer.start();
+                backgroundSwitchTimer.start();
             }
         }
     }
